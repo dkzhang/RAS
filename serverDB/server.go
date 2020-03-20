@@ -1,0 +1,75 @@
+package serverDB
+
+import (
+	"RAS/database"
+	"database/sql"
+	"encoding/csv"
+	"fmt"
+	"github.com/jmoiron/sqlx"
+	"os"
+)
+
+var schemaServer = `
+		CREATE TABLE server_info (
+    		name varchar(64) primary key,
+			ip varchar(64),
+			password varchar(64),
+			description varchar(256)
+		);
+		`
+
+type ServerInfo struct {
+	Name        string `db:"name"`
+	IP          string `db:"ip"`
+	Password    string `db:"password"`
+	Description string `db:"description"`
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
+	//先清空内存结构
+	servers := make(map[string]ServerInfo)
+
+	file, err := os.Open(csvFilePath)
+	if err != nil {
+		return fmt.Errorf("open csv file: %s error: %v", csvFilePath, err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	reader.FieldsPerRecord = -1
+	record, err := reader.ReadAll()
+	if err != nil {
+		return fmt.Errorf("reader.ReadAll error: %v", err)
+	}
+
+	for _, item := range record {
+		//从scv文件中逐条解析
+		si := ServerInfo{}
+		si.Name = item[0]
+		si.IP = item[1]
+		si.Password = item[2]
+		si.Description = item[3]
+
+		//在内存中插入
+		servers[si.Name] = si
+
+		//在数据库中插入
+		//假定table server_info已建立且为空表
+		insertServer := `INSERT INTO server_info (name, ip, password, description) VALUES (:name, :ip, :password, :description)`
+
+		_, err := db.NamedExec(insertServer, si)
+		if err != nil {
+			return fmt.Errorf("insert server basic info into database errror, UserID = %s :%v", si.Name, err)
+		}
+	}
+	return nil
+}
+
+func CreateServerTable(db *sqlx.DB) (result sql.Result, err error) {
+	return database.CreateTable(db, schemaServer)
+}
+
+func DropServerTable(db *sqlx.DB) (result sql.Result, err error) {
+	return database.DropTable(db, "server_info")
+}
