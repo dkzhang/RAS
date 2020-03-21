@@ -37,6 +37,26 @@ type Person struct {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+func QueryPerson(id string, db *sqlx.DB) (p *Person, err error) {
+	*p = Person{}
+	err = db.Get(p, "SELECT * FROM person WHERE user_id=?", id)
+	if err != nil {
+		return nil, fmt.Errorf("query person in db error: %v", err)
+	}
+	return p, nil
+}
+
+func GetAllPersonInfo(db *sqlx.DB) (pp []Person, err error) {
+	pp = []Person{}
+	err = db.Select(&pp, "SELECT * FROM person")
+	if err != nil {
+		return nil, fmt.Errorf("get all person info from db error: %v", err)
+	}
+	return pp, nil
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 	//先清空内存结构
 	persons := make(map[string]Person)
