@@ -22,10 +22,23 @@ func TestCsvFileToDb(t *testing.T) {
 		t.Errorf("db.Ping error: %v", err)
 	}
 
+	result, err := DropPersonTable(db)
+	if err != nil {
+		t.Errorf("DropPersonTable error: %v", err)
+	}
+	t.Logf("DropPersonTable success: %v", result)
+
+	result, err = CreatePersonTable(db)
+	if err != nil {
+		t.Errorf("CreatePersonTable error: %v", err)
+	}
+	t.Logf("CreatePersonTable success: %v", result)
+
 	err = CsvFileToDb("./persons.csv", db)
 	if err != nil {
 		t.Errorf("CsvFileToDb error: %v", err)
 	}
+	t.Logf("CsvFileToDb success")
 
 	pp, err := GetAllPersonInfo(db)
 	if err != nil {
