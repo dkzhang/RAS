@@ -38,11 +38,10 @@ type Person struct {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-func QueryPerson(id string, db *sqlx.DB) (p *Person, err error) {
-	*p = Person{}
-	err = db.Get(p, "SELECT * FROM person WHERE user_id=?", id)
+func QueryPerson(id string, db *sqlx.DB) (p Person, err error) {
+	err = db.Get(&p, "SELECT * FROM person WHERE user_id=?", id)
 	if err != nil {
-		return nil, fmt.Errorf("query person in db error: %v", err)
+		return Person{}, fmt.Errorf("query person in db error: %v", err)
 	}
 	return p, nil
 }
