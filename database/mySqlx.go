@@ -1,6 +1,7 @@
 package database
 
 import (
+	"RAS/myUtils"
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -23,7 +24,15 @@ func DropTable(db *sqlx.DB, tableName string) (result sql.Result, err error) {
 	return result, err
 }
 
-func LoadDatabaseSourceConfig(filename string) (driverName, dataSourceName string) {
-	fmt.Printf("config filename = %s", filename)
-	return "postgres", "user=postgres dbname=ras password=Jim980911 sslmode=disable"
+func LoadPostgreSource() (driverName, dataSourceName string, err error) {
+	//Load IdKey from file
+	filename := "/IdKey/database/pg001.json"
+	idKey, err := myUtils.LoadIdKey(filename)
+	if err != nil {
+		return "", "", fmt.Errorf("load PostgreSQL source from file error: %v", err)
+	}
+
+	dataSourceName = fmt.Sprintf(idKey.SecretId, idKey.SecretKey)
+	return "postgres", dataSourceName, nil
+	//return "postgres", "user=postgres dbname=ras password=Jim980911 sslmode=disable", nil
 }
