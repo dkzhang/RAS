@@ -17,32 +17,21 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		RetCode: 0,
 	}
 
-	len := r.ContentLength
-	body := make([]byte, len)
-	n, err := r.Body.Read(body)
-	if err != nil && err != io.EOF {
-		log.Printf("loginInfo error: %v", err)
-		loginInfo.RetCode = -1
-		loginInfo.Msg = ""
-		WriteResponse(loginInfo, &w)
-		return
-	}
-	log.Printf("r.Body.Read %d bytes: %s\n", n, body)
-
 	applyInfo := ApplyInfo{}
-	err = json.Unmarshal(body, &applyInfo)
-	if err != nil {
-		log.Printf("ApplyInfo json.Unmarshal error: %v", err)
-		loginInfo.RetCode = -1
-		loginInfo.Msg = ""
-		WriteResponse(loginInfo, &w)
+
+	if extractApplyInfo(r, &applyInfo, &loginInfo).RetCode != 0 {
+		writeResponse(loginInfo, &w)
 		return
 	}
-	log.Printf("User:%s\n", applyInfo.User)
-	log.Printf("ISP:%s\n", applyInfo.ISP)
-	log.Printf("PCInfo:%s\n", applyInfo.PCInfo)
 
-	//从数据库中查询该用户的服务器信息
+	//从数据库中查询该用户
+	//该用户是否存在，该用户是否有分配服务器
+
+	//从数据库中查询该服务器
+
+	//填写服务器地址+vnc桌面号
+	//修改密码
+
 	//获取密码
 	filename := "/IdKey/VncServer/server1.json"
 	idKey, err := myUtils.LoadIdKey(filename)
@@ -50,7 +39,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		log.Printf("myUtils.LoadIdKey for server1 error: %v", err)
 		loginInfo.RetCode = -1
 		loginInfo.Msg = ""
-		WriteResponse(loginInfo, &w)
+		writeResponse(loginInfo, &w)
 		return
 	}
 	loginInfo.ServerInfo = idKey.SecretId + ":25"
@@ -72,34 +61,66 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		log.Printf("ModifyVncPassword error: %v", err)
 		loginInfo.RetCode = -1
 		loginInfo.Msg = ""
-		WriteResponse(loginInfo, &w)
+		writeResponse(loginInfo, &w)
 		return
 	}
 	log.Printf("ModifyVncPassword result = %s", passwd)
 
 	//发送短信
+	if sendShortMessage(person, passwd, &loginInfo).RetCode != 0 {
+		writeResponse(loginInfo, &w)
+		return
+	}
+
+	//一切成功
+	log.Printf("all process success")
+	writeResponse(loginInfo, &w)
+	return
+}
+
+func extractApplyInfo(r *http.Request, pApplyInfo *ApplyInfo, pLoginInfo *LoginInfo) *LoginInfo {
+	contentLength := r.ContentLength
+	body := make([]byte, contentLength)
+	n, err := r.Body.Read(body)
+	if err != nil && err != io.EOF {
+		log.Printf("loginInfo error: %v", err)
+		pLoginInfo.RetCode = -1
+		pLoginInfo.Msg = ""
+		return pLoginInfo
+	}
+	log.Printf("r.Body.Read %d bytes: %s\n", n, body)
+
+	err = json.Unmarshal(body, pApplyInfo)
+	if err != nil {
+		log.Printf("ApplyInfo json.Unmarshal error: %v", err)
+		pLoginInfo.RetCode = -1
+		pLoginInfo.Msg = ""
+		return pLoginInfo
+	}
+	log.Printf("User:%s\n", pApplyInfo.User)
+	log.Printf("ISP:%s\n", pApplyInfo.ISP)
+	log.Printf("PCInfo:%s\n", pApplyInfo.PCInfo)
+	return pLoginInfo
+}
+
+func sendShortMessage(person personDB.Person, passwd string, pLoginInfo *LoginInfo) *LoginInfo {
 	msg := DefaultMessageContent()
 	phoneNumber := "+86" + person.Mobile
 	msg.PhoneNumberSet = []*string{&phoneNumber}
 	timeoutStr := "15"
 	msg.TemplateParamSet = []*string{&person.UserName, &passwd, &timeoutStr}
-	retsult, err := SendSMS(msg)
+	result, err := SendSMS(msg)
 	if err != nil {
 		log.Printf("send short message error: %v", err)
-		loginInfo.RetCode = -1
-		loginInfo.Msg = ""
-		WriteResponse(loginInfo, &w)
-		return
+		pLoginInfo.RetCode = -1
+		pLoginInfo.Msg = ""
+		return pLoginInfo
 	}
-	log.Printf("send short message success: %s", retsult)
-
-	//一切成功
-	log.Printf("all process success: %s", retsult)
-	WriteResponse(loginInfo, &w)
-	return
+	log.Printf("send short message success: %s", result)
+	return pLoginInfo
 }
 
-func WriteResponse(loginInfo LoginInfo, w *http.ResponseWriter) {
+func writeResponse(loginInfo LoginInfo, w *http.ResponseWriter) {
 	//填写响应
 	log.Printf("LoginInfo = %v", loginInfo)
 
