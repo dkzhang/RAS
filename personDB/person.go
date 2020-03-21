@@ -39,7 +39,7 @@ type Person struct {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 func QueryPerson(id string, db *sqlx.DB) (p Person, err error) {
-	err = db.Get(&p, "SELECT * FROM person WHERE user_id=?", id)
+	err = db.Get(&p, "SELECT * FROM person WHERE user_id=$1", id)
 	if err != nil {
 		return Person{}, fmt.Errorf("query person in db error: %v", err)
 	}
