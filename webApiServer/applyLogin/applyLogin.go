@@ -16,7 +16,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	loginInfo := LoginInfo{
 		RetCode: 0,
 	}
-	defer WriteResponse(loginInfo, w)
+	defer WriteResponse(loginInfo, &w)
 
 	len := r.ContentLength
 	body := make([]byte, len)
@@ -89,14 +89,14 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	return
 }
 
-func WriteResponse(loginInfo LoginInfo, w http.ResponseWriter) {
+func WriteResponse(loginInfo LoginInfo, w *http.ResponseWriter) {
 	//填写响应
 	loginInfoJson, err := json.Marshal(loginInfo)
 	if err != nil {
 		log.Printf("loginInfo error: %v", err)
-		w.WriteHeader(500)
+		(*w).WriteHeader(500)
 	}
-	fmt.Fprintf(w, "%s", string(loginInfoJson))
+	fmt.Fprintf(*w, "%s", string(loginInfoJson))
 }
 
 type LoginInfo struct {

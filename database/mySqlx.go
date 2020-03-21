@@ -35,4 +35,5 @@ func LoadPostgreSource() (driverName, dataSourceName string, err error) {
 	dataSourceName = fmt.Sprintf(idKey.SecretId, idKey.SecretKey)
 	return "postgres", dataSourceName, nil
 	//return "postgres", "user=postgres dbname=ras password=Jim980911 sslmode=disable", nil
+	//"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
 }
