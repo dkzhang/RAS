@@ -27,7 +27,7 @@ var schemaPerson = `
 type Person struct {
 	UserID     string `db:"user_id"`
 	UserName   string `db:"user_name"`
-	Department string `db:"department`
+	Department string `db:"department"`
 	Mobile     string `db:"mobile"`
 
 	ServerIP     string `db:"server_ip"`
