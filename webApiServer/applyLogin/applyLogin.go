@@ -55,6 +55,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	}
 	loginInfo.ServerInfo = idKey.SecretId + ":25"
 
+	//personDB.QueryPerson(theDB)
 	person := personDB.Person{
 		UserName:   "张俊",
 		Mobile:     "15383026353",

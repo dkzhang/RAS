@@ -25,6 +25,23 @@ type ServerInfo struct {
 	Description string `db:"description"`
 }
 
+func QueryServer(name string, db *sqlx.DB) (s ServerInfo, err error) {
+	err = db.Get(&s, "SELECT * FROM server_info WHERE name=$1", name)
+	if err != nil {
+		return ServerInfo{}, fmt.Errorf("query server info in db error: %v", err)
+	}
+	return s, nil
+}
+
+func GetAllServerInfo(db *sqlx.DB) (ss []ServerInfo, err error) {
+	ss = []ServerInfo{}
+	err = db.Select(&ss, "SELECT * FROM server_info")
+	if err != nil {
+		return nil, fmt.Errorf("get all server info from db error: %v", err)
+	}
+	return ss, nil
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 	//先清空内存结构

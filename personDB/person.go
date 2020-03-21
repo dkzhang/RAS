@@ -17,7 +17,7 @@ var schemaPerson = `
 			department varchar(256),
 			mobile varchar(32),
 			
-			server_ip varchar(32),
+			server_name varchar(32),
 			vnc_display int, 
 			server_user varchar(32),
 			server_passwd varchar(32)
@@ -30,7 +30,7 @@ type Person struct {
 	Department string `db:"department"`
 	Mobile     string `db:"mobile"`
 
-	ServerIP     string `db:"server_ip"`
+	ServerName   string `db:"server_name"`
 	VncDisplay   int    `db:"vnc_display"`
 	ServerUser   string `db:"server_user"`
 	ServerPasswd string `db:"server_passwd"`
@@ -81,7 +81,7 @@ func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 		p.Department = item[2]
 		p.Mobile = item[3]
 
-		p.ServerIP = item[4]
+		p.ServerName = item[4]
 		p.VncDisplay, err = strconv.Atoi(item[5])
 		if err != nil {
 			return fmt.Errorf("p.VncDisplay strconv.Atoi  error, UserID = %s, VncDisplay = %s: %v",
@@ -95,7 +95,7 @@ func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 
 		//在数据库中插入
 		//假定table person已建立且为空表
-		insertPerson := `INSERT INTO person (user_id, user_name, department, mobile, server_ip, vnc_display, server_user, server_passwd) VALUES (:user_id, :user_name, :department, :mobile, :server_ip, :vnc_display, :server_user, :server_passwd)`
+		insertPerson := `INSERT INTO person (user_id, user_name, department, mobile, server_name, vnc_display, server_user, server_passwd) VALUES (:user_id, :user_name, :department, :mobile, :server_name, :vnc_display, :server_user, :server_passwd)`
 
 		_, err := db.NamedExec(insertPerson, p)
 		if err != nil {

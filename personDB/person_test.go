@@ -34,7 +34,7 @@ func TestCsvFileToDb(t *testing.T) {
 	}
 	t.Logf("CreatePersonTable success: %v", result)
 
-	err = CsvFileToDb("./persons.csv", db)
+	err = CsvFileToDb("/TestDataset/persons.csv", db)
 	if err != nil {
 		t.Errorf("CsvFileToDb error: %v", err)
 	}
