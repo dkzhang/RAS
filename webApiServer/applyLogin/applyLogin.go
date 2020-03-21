@@ -16,7 +16,6 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	loginInfo := LoginInfo{
 		RetCode: 0,
 	}
-	defer WriteResponse(loginInfo, &w)
 
 	len := r.ContentLength
 	body := make([]byte, len)
@@ -25,6 +24,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		log.Printf("loginInfo error: %v", err)
 		loginInfo.RetCode = -1
 		loginInfo.Msg = ""
+		WriteResponse(loginInfo, &w)
 		return
 	}
 	log.Printf("r.Body.Read %d bytes: %s\n", n, body)
@@ -35,6 +35,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		log.Printf("ApplyInfo json.Unmarshal error: %v", err)
 		loginInfo.RetCode = -1
 		loginInfo.Msg = ""
+		WriteResponse(loginInfo, &w)
 		return
 	}
 	log.Printf("User:%s\n", applyInfo.User)
@@ -49,6 +50,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		log.Printf("myUtils.LoadIdKey for server1 error: %v", err)
 		loginInfo.RetCode = -1
 		loginInfo.Msg = ""
+		WriteResponse(loginInfo, &w)
 		return
 	}
 	loginInfo.ServerInfo = idKey.SecretId + ":25"
@@ -69,6 +71,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		log.Printf("ModifyVncPassword error: %v", err)
 		loginInfo.RetCode = -1
 		loginInfo.Msg = ""
+		WriteResponse(loginInfo, &w)
 		return
 	}
 	log.Printf("ModifyVncPassword result = %s", passwd)
@@ -82,15 +85,23 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	retsult, err := SendSMS(msg)
 	if err != nil {
 		log.Printf("send short message error: %v", err)
+		loginInfo.RetCode = -1
+		loginInfo.Msg = ""
+		WriteResponse(loginInfo, &w)
 		return
 	}
 	log.Printf("send short message success: %s", retsult)
 
+	//一切成功
+	log.Printf("all process success: %s", retsult)
+	WriteResponse(loginInfo, &w)
 	return
 }
 
 func WriteResponse(loginInfo LoginInfo, w *http.ResponseWriter) {
 	//填写响应
+	log.Printf("LoginInfo = %v", loginInfo)
+
 	loginInfoJson, err := json.Marshal(loginInfo)
 	if err != nil {
 		log.Printf("loginInfo error: %v", err)
