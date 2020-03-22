@@ -1,62 +1,53 @@
 package applyLogin
 
 import (
-	"RAS/myUtils"
 	"RAS/personDB"
+	"RAS/serverDB"
 	"RAS/toVncServer"
 	"encoding/json"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"log"
 	"net/http"
 )
 
+var TheDB *sqlx.DB
+
 func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	loginInfo := LoginInfo{
-		RetCode: 0,
-	}
+	var applyInfo ApplyInfo
+	var loginInfo LoginInfo
 
-	applyInfo := ApplyInfo{}
-
-	if extractApplyInfo(r, &applyInfo, &loginInfo).RetCode != 0 {
+	applyInfo, loginInfo = extractApplyInfo(r)
+	if loginInfo.RetCode != 0 {
 		writeResponse(loginInfo, &w)
 		return
 	}
 
 	//从数据库中查询该用户
-	//该用户是否存在，该用户是否有分配服务器
-
-	//从数据库中查询该服务器
-
-	//填写服务器地址+vnc桌面号
-	//修改密码
-
-	//获取密码
-	filename := "/IdKey/VncServer/server1.json"
-	idKey, err := myUtils.LoadIdKey(filename)
-	if err != nil {
-		log.Printf("myUtils.LoadIdKey for server1 error: %v", err)
-		loginInfo.RetCode = -1
-		loginInfo.Msg = ""
+	//该用户是否存在, 该用户是否有分配服务器
+	var person personDB.Person
+	person, loginInfo = queryPerson(applyInfo.User, TheDB)
+	if loginInfo.RetCode != 0 {
 		writeResponse(loginInfo, &w)
 		return
 	}
-	loginInfo.ServerInfo = idKey.SecretId + ":25"
 
-	//personDB.QueryPerson(theDB)
-	person := personDB.Person{
-		UserName:   "张俊",
-		Mobile:     "15383026353",
-		VncDisplay: 25,
-		ServerUser: "vncu25",
+	//从数据库中查询该服务器
+	var server serverDB.ServerInfo
+	server, loginInfo = queryServer(person.ServerName, TheDB)
+	if loginInfo.RetCode != 0 {
+		writeResponse(loginInfo, &w)
+		return
 	}
 
-	s := toVncServer.DefaultSshServerInfo()
-	s.Host = idKey.SecretId
-	s.Password = idKey.SecretKey
+	sshServer := toVncServer.DefaultSshServerInfo()
+	sshServer.Host = server.IP
+	sshServer.Password = server.Password
 
-	passwd, err := toVncServer.ModifyVncPassword(person, s)
+	//修改并获取密码
+	passwd, err := toVncServer.ModifyVncPassword(person, sshServer)
 	if err != nil {
 		log.Printf("ModifyVncPassword error: %v", err)
 		loginInfo.RetCode = -1
@@ -64,46 +55,82 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		writeResponse(loginInfo, &w)
 		return
 	}
-	log.Printf("ModifyVncPassword result = %s", passwd)
+	log.Printf("ModifyVncPassword result = %sshServer", passwd)
 
 	//发送短信
-	if sendShortMessage(person, passwd, &loginInfo).RetCode != 0 {
+	if sendShortMessage(person, passwd).RetCode != 0 {
 		writeResponse(loginInfo, &w)
 		return
 	}
 
 	//一切成功
 	log.Printf("all process success")
+	//填写服务器地址+vnc桌面号
+	loginInfo.ServerInfo = fmt.Sprintf("%s:%d", server.IP, person.VncDisplay)
+	loginInfo.RetCode = 0
 	writeResponse(loginInfo, &w)
 	return
 }
 
-func extractApplyInfo(r *http.Request, pApplyInfo *ApplyInfo, pLoginInfo *LoginInfo) *LoginInfo {
+func extractApplyInfo(r *http.Request) (applyInfo ApplyInfo, loginInfo LoginInfo) {
 	contentLength := r.ContentLength
 	body := make([]byte, contentLength)
 	n, err := r.Body.Read(body)
 	if err != nil && err != io.EOF {
 		log.Printf("loginInfo error: %v", err)
-		pLoginInfo.RetCode = -1
-		pLoginInfo.Msg = ""
-		return pLoginInfo
+		loginInfo.RetCode = -1
+		loginInfo.Msg = ""
+		return
 	}
 	log.Printf("r.Body.Read %d bytes: %s\n", n, body)
 
-	err = json.Unmarshal(body, pApplyInfo)
+	err = json.Unmarshal(body, &applyInfo)
 	if err != nil {
 		log.Printf("ApplyInfo json.Unmarshal error: %v", err)
-		pLoginInfo.RetCode = -1
-		pLoginInfo.Msg = ""
-		return pLoginInfo
+		loginInfo.RetCode = -1
+		loginInfo.Msg = ""
+		return
 	}
-	log.Printf("User:%s\n", pApplyInfo.User)
-	log.Printf("ISP:%s\n", pApplyInfo.ISP)
-	log.Printf("PCInfo:%s\n", pApplyInfo.PCInfo)
-	return pLoginInfo
+	log.Printf("User:%s\n", applyInfo.User)
+	log.Printf("ISP:%s\n", applyInfo.ISP)
+	log.Printf("PCInfo:%s\n", applyInfo.PCInfo)
+	return
 }
 
-func sendShortMessage(person personDB.Person, passwd string, pLoginInfo *LoginInfo) *LoginInfo {
+func queryPerson(userID string, db *sqlx.DB) (person personDB.Person, loginInfo LoginInfo) {
+	var err error
+	person, err = personDB.QueryPerson(userID, db)
+	if err != nil {
+		log.Printf("personDB.QueryPerson =%s error: %v", userID, err)
+		loginInfo.RetCode = -1
+		loginInfo.Msg = "无法找到该用户！"
+		return
+	}
+
+	if len(person.ServerName) == 0 {
+		log.Printf("person %s has no server resource", person.UserID)
+		loginInfo.RetCode = -1
+		loginInfo.Msg = "该用户无权访问服务器资源！"
+		return
+	}
+
+	log.Printf("person %s info query success: %v", person.UserID, person)
+	return
+}
+
+func queryServer(serverName string, db *sqlx.DB) (server serverDB.ServerInfo, loginInfo LoginInfo) {
+	var err error
+	server, err = serverDB.QueryServer(serverName, db)
+	if err != nil {
+		log.Printf("serverDB.QueryServer =%s error: %v", serverName, err)
+		loginInfo.RetCode = -1
+		loginInfo.Msg = "无法找到为您配置的服务器，请联系管理员！"
+		return
+	}
+	return
+}
+
+func sendShortMessage(person personDB.Person, passwd string) (loginInfo LoginInfo) {
 	msg := DefaultMessageContent()
 	phoneNumber := "+86" + person.Mobile
 	msg.PhoneNumberSet = []*string{&phoneNumber}
@@ -112,12 +139,12 @@ func sendShortMessage(person personDB.Person, passwd string, pLoginInfo *LoginIn
 	result, err := SendSMS(msg)
 	if err != nil {
 		log.Printf("send short message error: %v", err)
-		pLoginInfo.RetCode = -1
-		pLoginInfo.Msg = ""
-		return pLoginInfo
+		loginInfo.RetCode = -1
+		loginInfo.Msg = ""
+		return
 	}
 	log.Printf("send short message success: %s", result)
-	return pLoginInfo
+	return
 }
 
 func writeResponse(loginInfo LoginInfo, w *http.ResponseWriter) {

@@ -15,7 +15,7 @@ import (
 
 //var log = logrus.New()
 
-var theDB *sqlx.DB
+var db *sqlx.DB
 
 func main() {
 	//log
@@ -27,18 +27,20 @@ func main() {
 		return
 	}
 
-	theDB, err = database.ConnectToDatabase(driverName, dataSourceName)
+	db, err = database.ConnectToDatabase(driverName, dataSourceName)
 	if err != nil {
 		log.Printf("ConnectToDatabase error: %v", err)
 		return
 	}
-	defer theDB.Close()
+	defer db.Close()
 
-	err = theDB.Ping()
+	err = db.Ping()
 	if err != nil {
-		log.Printf("theDB.Ping error: %v", err)
+		log.Printf("db.Ping error: %v", err)
 		return
 	}
+
+	applyLogin.TheDB = db
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	mux := httprouter.New()
