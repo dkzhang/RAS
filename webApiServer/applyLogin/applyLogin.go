@@ -1,6 +1,7 @@
 package applyLogin
 
 import (
+	"RAS/myUtils"
 	"RAS/personDB"
 	"RAS/serverDB"
 	"RAS/toVncServer"
@@ -145,7 +146,7 @@ func sendShortMessage(person personDB.Person, passwd string, timeout time.Durati
 	msg := DefaultMessageContent()
 	phoneNumber := "+86" + person.Mobile
 	msg.PhoneNumberSet = []*string{&phoneNumber}
-	timeoutStr := fmt.Sprintf("%d", timeout.Minutes())
+	timeoutStr := fmt.Sprintf("%d", myUtils.FloatToInt(timeout.Minutes()))
 	msg.TemplateParamSet = []*string{&person.UserName, &passwd, &timeoutStr}
 	result, err := SendSMS(msg)
 	if err != nil {
