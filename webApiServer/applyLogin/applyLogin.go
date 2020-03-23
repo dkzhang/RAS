@@ -56,15 +56,23 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		writeResponse(loginInfo, &w)
 		return
 	}
-	log.Printf("ModifyVncPassword result = %sshServer", passwd)
+	log.Printf("ModifyVncPassword passwd = %s", passwd)
 
 	//发送短信
-	if sendShortMessage(person, passwd).RetCode != 0 {
+	timeout := time.Minute * 10
+	if sendShortMessage(person, passwd, timeout).RetCode != 0 {
 		writeResponse(loginInfo, &w)
 		return
 	}
 
-	time.AfterFunc(time.Minute*2, func() { toVncServer.ModifyVncPassword(person, sshServer) })
+	//超时重置密码
+	time.AfterFunc(timeout, func() {
+		passwd, err := toVncServer.ModifyVncPassword(person, sshServer)
+		if err != nil {
+			log.Printf("timeout reset ModifyVncPassword error: %v", err)
+		}
+		log.Printf("timeout reset ModifyVncPassword passwd = %s", passwd)
+	})
 
 	//一切成功
 	log.Printf("all process success")
@@ -133,11 +141,11 @@ func queryServer(serverName string, db *sqlx.DB) (server serverDB.ServerInfo, lo
 	return
 }
 
-func sendShortMessage(person personDB.Person, passwd string) (loginInfo LoginInfo) {
+func sendShortMessage(person personDB.Person, passwd string, timeout time.Duration) (loginInfo LoginInfo) {
 	msg := DefaultMessageContent()
 	phoneNumber := "+86" + person.Mobile
 	msg.PhoneNumberSet = []*string{&phoneNumber}
-	timeoutStr := "15"
+	timeoutStr := fmt.Sprintf("%d", timeout.Minutes())
 	msg.TemplateParamSet = []*string{&person.UserName, &passwd, &timeoutStr}
 	result, err := SendSMS(msg)
 	if err != nil {
