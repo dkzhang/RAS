@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 var TheDB *sqlx.DB
@@ -62,6 +63,8 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		writeResponse(loginInfo, &w)
 		return
 	}
+
+	time.AfterFunc(time.Minute*2, func() { toVncServer.ModifyVncPassword(person, sshServer) })
 
 	//一切成功
 	log.Printf("all process success")
