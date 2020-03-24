@@ -1,7 +1,7 @@
 package personDB
 
 import (
-	"RAS/database"
+	"RAS/myPostgreSQL"
 	"database/sql"
 	"encoding/csv"
 	"fmt"
@@ -99,16 +99,16 @@ func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 
 		_, err := db.NamedExec(insertPerson, p)
 		if err != nil {
-			return fmt.Errorf("insert person basic info into database errror, UserID = %s :%v", p.UserID, err)
+			return fmt.Errorf("insert person basic info into myPostgreSQL errror, UserID = %s :%v", p.UserID, err)
 		}
 	}
 	return nil
 }
 
 func CreatePersonTable(db *sqlx.DB) (result sql.Result, err error) {
-	return database.CreateTable(db, schemaPerson)
+	return myPostgreSQL.CreateTable(db, schemaPerson)
 }
 
 func DropPersonTable(db *sqlx.DB) (result sql.Result, err error) {
-	return database.DropTable(db, "person")
+	return myPostgreSQL.DropTable(db, "person")
 }

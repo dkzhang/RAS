@@ -1,6 +1,7 @@
 package applyLogin
 
 import (
+	"RAS/myRedis"
 	"RAS/myUtils"
 	"RAS/personDB"
 	"RAS/serverDB"
@@ -16,6 +17,7 @@ import (
 )
 
 var TheDB *sqlx.DB
+var TheRedis *myRedis.Redis
 
 func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var applyInfo ApplyInfo
@@ -25,6 +27,17 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	if loginInfo.RetCode != 0 {
 		writeResponse(loginInfo, &w)
 		return
+	}
+
+	//防频繁登录：先在redis缓存中进行检索
+	blockTime := time.Minute * 3
+	if TheRedis.IsExist(applyInfo.User) {
+		loginInfo = LoginInfo{
+			ServerInfo: "",
+			RetCode:    -2,
+			Msg: fmt.Sprintf("检测到您短时间内频繁登录，请%d分钟后再试!\n",
+				myUtils.FloatToInt(blockTime.Minutes())),
+		}
 	}
 
 	//从数据库中查询该用户
@@ -74,6 +87,11 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		}
 		log.Printf("timeout reset ModifyVncPassword passwd = %s", passwd)
 	})
+
+	//防频繁登录，在redis中记录当前用户
+	rAddr := r.RemoteAddr
+	fmt.Printf("Remote IP address is: %s \n", rAddr)
+	TheRedis.Set(applyInfo.User, rAddr, blockTime)
 
 	//一切成功
 	log.Printf("all process success")
