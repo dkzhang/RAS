@@ -4,6 +4,7 @@ import (
 	"RAS/myUtils"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -85,12 +86,13 @@ func (r *Redis) IsExist(key string) bool {
 	conn := r.conn.Get()
 	defer conn.Close()
 
-	a, _ := conn.Do("EXISTS", key)
-	i := a.(int64)
-	if i > 0 {
-		return true
+	exists, err := redis.Bool(conn.Do("EXISTS", key))
+	if err != nil {
+		// handle error return from c.Do or type conversion error.
+		log.Printf("redis.Bool error: %v", err)
+		return false
 	}
-	return false
+	return exists
 }
 
 //Delete 删除
