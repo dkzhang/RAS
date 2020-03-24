@@ -52,7 +52,7 @@ func main() {
 	}
 	dbRedis = myRedis.NewRedis(redisOpts)
 	applyLogin.TheRedis = dbRedis
-
+	queryIP.TheRedis = dbRedis
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	mux := httprouter.New()
 
