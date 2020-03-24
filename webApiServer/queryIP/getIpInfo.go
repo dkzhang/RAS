@@ -28,6 +28,7 @@ func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 		// 先在缓存中查询
 		if TheRedis.IsExist(rAddr) {
+			log.Printf("ip address already existed: %s", rAddr)
 			strJson := TheRedis.Get(rAddr).(string)
 			log.Printf("find ip info <%s> from cache: %s", rAddr, strJson)
 			fmt.Fprintf(w, "%s", strJson)
