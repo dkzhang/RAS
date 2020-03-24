@@ -7,7 +7,8 @@ import (
 
 func TestRedis(t *testing.T) {
 	opts := &RedisOpts{
-		Host: "ras-redis:6379",
+		Host:     "ras-redis:6379",
+		Password: "111111",
 	}
 	redis := NewRedis(opts)
 	var err error
