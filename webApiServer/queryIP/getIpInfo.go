@@ -18,14 +18,6 @@ func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	rAddr := r.RemoteAddr
 	fmt.Printf("Remote IP address is: %s \n", rAddr)
 
-	// 先在缓存中查询
-	cacheTime := time.Hour * 24
-	if TheRedis.IsExist(rAddr) {
-		strJson := TheRedis.Get(rAddr).(string)
-		log.Printf("find ip info <%s> from cache: %s", rAddr, strJson)
-		fmt.Fprintf(w, "%s", strJson)
-	}
-
 	//((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)
 
 	reg := regexp.MustCompile(`((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)`)
@@ -33,6 +25,14 @@ func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if reg.MatchString(rAddr) == true {
 		ipAddress := reg.FindString(rAddr)
 		log.Printf("Server received your IP address: %s \n", ipAddress)
+
+		// 先在缓存中查询
+		if TheRedis.IsExist(rAddr) {
+			strJson := TheRedis.Get(rAddr).(string)
+			log.Printf("find ip info <%s> from cache: %s", rAddr, strJson)
+			fmt.Fprintf(w, "%s", strJson)
+			return
+		}
 
 		ipInfo, err := queryIP(ipAddress)
 		if err != nil {
@@ -67,7 +67,9 @@ func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	} else {
 		strJson := string(ipInfoResultJson)
 		fmt.Fprintf(w, "%s", strJson)
+
 		//写入缓存
+		cacheTime := time.Hour * 24
 		TheRedis.Set(rAddr, strJson, cacheTime)
 		log.Printf("write ip info <%s> in cache: %s", rAddr, strJson)
 	}

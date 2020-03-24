@@ -38,6 +38,8 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 			Msg: fmt.Sprintf("检测到您短时间内频繁登录，请%d分钟后再试!\n",
 				myUtils.FloatToInt(blockTime.Minutes())),
 		}
+		writeResponse(loginInfo, &w)
+		return
 	}
 
 	//从数据库中查询该用户
