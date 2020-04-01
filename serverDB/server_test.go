@@ -1,17 +1,17 @@
 package serverDB
 
 import (
-	"RAS/database"
+	"RAS/myPostgreSQL"
 	"testing"
 )
 
 func TestCsvFileToDb(t *testing.T) {
-	driverName, dataSourceName, err := database.LoadPostgreSource()
+	driverName, dataSourceName, err := myPostgreSQL.LoadPostgreSource()
 	if err != nil {
-		t.Errorf("database.LoadPostgreSource error: %v", err)
+		t.Errorf("myPostgreSQL.LoadPostgreSource error: %v", err)
 	}
 
-	db, err := database.ConnectToDatabase(driverName, dataSourceName)
+	db, err := myPostgreSQL.ConnectToDatabase(driverName, dataSourceName)
 	if err != nil {
 		t.Errorf("ConnectToDatabase error: %v", err)
 	}

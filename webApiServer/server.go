@@ -1,7 +1,8 @@
 package main
 
 import (
-	"RAS/database"
+	"RAS/myPostgreSQL"
+	"RAS/myRedis"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
@@ -15,33 +16,43 @@ import (
 
 //var log = logrus.New()
 
-var db *sqlx.DB
+var dbPostgreSQL *sqlx.DB
+var dbRedis *myRedis.Redis
 
 func main() {
 	//log
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	driverName, dataSourceName, err := database.LoadPostgreSource()
+	driverName, dataSourceName, err := myPostgreSQL.LoadPostgreSource()
 	if err != nil {
-		log.Printf("database.LoadPostgreSource error: %v", err)
+		log.Printf("myPostgreSQL.LoadPostgreSource error: %v", err)
 		return
 	}
 
-	db, err = database.ConnectToDatabase(driverName, dataSourceName)
+	dbPostgreSQL, err = myPostgreSQL.ConnectToDatabase(driverName, dataSourceName)
 	if err != nil {
 		log.Printf("ConnectToDatabase error: %v", err)
 		return
 	}
-	defer db.Close()
+	defer dbPostgreSQL.Close()
 
-	err = db.Ping()
+	err = dbPostgreSQL.Ping()
 	if err != nil {
-		log.Printf("db.Ping error: %v", err)
+		log.Printf("dbPostgreSQL.Ping error: %v", err)
 		return
 	}
 
-	applyLogin.TheDB = db
+	applyLogin.TheDB = dbPostgreSQL
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	redisHost, redisPasswd, err := myRedis.LoadRedisSource()
+	redisOpts := &myRedis.RedisOpts{
+		Host:     redisHost,
+		Password: redisPasswd,
+	}
+	dbRedis = myRedis.NewRedis(redisOpts)
+	applyLogin.TheRedis = dbRedis
+	queryIP.TheRedis = dbRedis
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	mux := httprouter.New()
 

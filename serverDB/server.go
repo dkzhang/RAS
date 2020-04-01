@@ -1,7 +1,7 @@
 package serverDB
 
 import (
-	"RAS/database"
+	"RAS/myPostgreSQL"
 	"database/sql"
 	"encoding/csv"
 	"fmt"
@@ -77,16 +77,16 @@ func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 
 		_, err := db.NamedExec(insertServer, si)
 		if err != nil {
-			return fmt.Errorf("insert server basic info into database errror, UserID = %s :%v", si.Name, err)
+			return fmt.Errorf("insert server basic info into myPostgreSQL errror, UserID = %s :%v", si.Name, err)
 		}
 	}
 	return nil
 }
 
 func CreateServerTable(db *sqlx.DB) (result sql.Result, err error) {
-	return database.CreateTable(db, schemaServer)
+	return myPostgreSQL.CreateTable(db, schemaServer)
 }
 
 func DropServerTable(db *sqlx.DB) (result sql.Result, err error) {
-	return database.DropTable(db, "server_info")
+	return myPostgreSQL.DropTable(db, "server_info")
 }

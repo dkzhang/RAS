@@ -1,4 +1,4 @@
-package database
+package myPostgreSQL
 
 import (
 	"RAS/myUtils"

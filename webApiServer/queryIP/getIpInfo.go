@@ -1,13 +1,17 @@
 package queryIP
 
 import (
+	"RAS/myRedis"
 	"encoding/json"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"regexp"
+	"time"
 )
+
+var TheRedis *myRedis.Redis
 
 func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	ipInfoResult := QueryIpApiResultBody{}
@@ -21,6 +25,14 @@ func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if reg.MatchString(rAddr) == true {
 		ipAddress := reg.FindString(rAddr)
 		log.Printf("Server received your IP address: %s \n", ipAddress)
+
+		// 先在缓存中查询
+		if TheRedis.IsExist(rAddr) {
+			strJson := TheRedis.Get(rAddr).(string)
+			log.Printf("find ip info <%s> from cache: %s", rAddr, strJson)
+			fmt.Fprintf(w, "%s", strJson)
+			return
+		}
 
 		ipInfo, err := queryIP(ipAddress)
 		if err != nil {
@@ -53,7 +65,13 @@ func GetIpInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		log.Printf("ipInfoResult json.Marshal error: %v", err)
 		w.WriteHeader(500)
 	} else {
-		fmt.Fprintf(w, "%s", string(ipInfoResultJson))
+		strJson := string(ipInfoResultJson)
+		fmt.Fprintf(w, "%s", strJson)
+
+		//写入缓存
+		cacheTime := time.Hour * 24
+		TheRedis.Set(rAddr, strJson, cacheTime)
+		log.Printf("write ip info <%s> in cache: %s", rAddr, strJson)
 	}
 	return
 }
