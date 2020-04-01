@@ -10,6 +10,6 @@ func TestConnectToDatabase(t *testing.T) {
 
 	err = db.Ping()
 	if err != nil {
-		t.Errorf("db.Ping error: %v", err)
+		t.Errorf("db.Ping error: %v ", err)
 	}
 }
