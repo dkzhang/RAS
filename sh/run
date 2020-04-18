@@ -4,4 +4,6 @@ docker run --rm --network ras-bridge --name ras-redis -d redis --requirepass "11
 
 docker run --network ras-bridge --name ras-pg -e POSTGRES_PASSWORD=111111 -d postgres
 
+
+
 docker run --network ras-bridge -it --rm postgres psql -h ras-pg -U postgres
