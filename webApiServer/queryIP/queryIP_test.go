@@ -13,7 +13,8 @@ func TestQueryIP(t *testing.T) {
 		t.Logf("queryIP success")
 	}
 
-	ipInfoStruct := QueryIpApiResult{}
+	ipInfoStruct :=
+		QueryIpApiResult{}
 	if err := json.Unmarshal(r, &ipInfoStruct); err != nil {
 		t.Errorf("ip info unmarshal error: %v", err)
 	} else {

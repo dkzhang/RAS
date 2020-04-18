@@ -25,6 +25,7 @@ func SendSMS(msg *MessageContent) (resp string, err error) {
 	/////////////////////////////////////////////
 	cpf := profile.NewClientProfile()
 	cpf.HttpProfile.Endpoint = "sms.tencentcloudapi.com"
+	cpf.HttpProfile.ReqTimeout = 60
 	client, _ := sms.NewClient(credential, "", cpf)
 
 	request := sms.NewSendSmsRequest()

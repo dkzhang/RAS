@@ -81,7 +81,7 @@ func queryIP(ipAddress string) (ipInfo []byte, err error) {
 	}
 
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
