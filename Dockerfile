@@ -1,16 +1,14 @@
 FROM golang
 
-RUN go get github.com/tencentcloud/tencentcloud-sdk-go && \
-    go get github.com/julienschmidt/httprouter && \
-    go get golang.org/x/crypto/ssh && \
-    go get github.com/jmoiron/sqlx && \
-    go get github.com/lib/pq && \
-    go get github.com/gomodule/redigo/redis
+RUN go env -w GO111MODULE=on && \
+    go env -w GOPROXY=https://goproxy.cn,direct
 
 WORKDIR /go/src
 
-RUN git clone https://github.com/dkzhang/RAS.git #20200318
+RUN git clone https://github.com/dkzhang/RAS.git #20200716-2132
 
 WORKDIR /go/src/RAS/webApiServer
 
-CMD go run ./server.go
+RUN go build ./server.go
+
+CMD ./server
