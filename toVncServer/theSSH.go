@@ -27,7 +27,7 @@ func DefaultSshServerInfo() SshServerInfo {
 		Type:     "password",
 		KeyPath:  "",
 		Port:     22,
-		Timeout:  time.Second,
+		Timeout:  time.Minute,
 	}
 }
 
