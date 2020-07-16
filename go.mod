@@ -9,4 +9,5 @@ require (
 	github.com/lib/pq v1.7.0
 	github.com/tencentcloud/tencentcloud-sdk-go v3.0.213+incompatible
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
+	google.golang.org/appengine v1.6.6 // indirect
 )
