@@ -1,8 +1,8 @@
-docker run -p 8083:8083 --rm  --name=ras --mount source=webserver-idkey,destination=/IdKey,readonly --mount source=webserver-tls,destination=/TLS,readonly --mount source=webserver-testdataset,destination=/TestDataset,readonly --network ras-bridge registry.cn-beijing.aliyuncs.com/dkzhang/ras:1.0
+docker run -p 8083:8083 --restart=always  --name=ras --mount source=webserver-idkey,destination=/IdKey,readonly --mount source=webserver-tls,destination=/TLS,readonly --mount source=webserver-testdataset,destination=/TestDataset,readonly --network ras-bridge registry.cn-beijing.aliyuncs.com/dkzhang/ras:1.0
 
-docker run --rm --network ras-bridge --name ras-redis -d redis --requirepass "111111"
+docker run --restart=always --network ras-bridge --name ras-redis -d redis --requirepass "111111"
 
-docker run --network ras-bridge --name ras-pg -e POSTGRES_PASSWORD=111111 -d postgres
+docker run --restart=always --network ras-bridge --name ras-pg -e POSTGRES_PASSWORD=111111 -d postgres
 
 
 
