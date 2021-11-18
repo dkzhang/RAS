@@ -13,6 +13,7 @@ var schemaServer = `
 		CREATE TABLE server_info (
     		name varchar(64) primary key,
 			ip varchar(64),
+			ssh_ip varchar(64),
 			password varchar(64),
 			description varchar(256)
 		);
@@ -21,6 +22,7 @@ var schemaServer = `
 type ServerInfo struct {
 	Name        string `db:"name"`
 	IP          string `db:"ip"`
+	SshIP       string `db:"ssh_ip"`
 	Password    string `db:"password"`
 	Description string `db:"description"`
 }
@@ -42,7 +44,7 @@ func GetAllServerInfo(db *sqlx.DB) (ss []ServerInfo, err error) {
 	return ss, nil
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 	//先清空内存结构
 	servers := make(map[string]ServerInfo)
@@ -65,15 +67,16 @@ func CsvFileToDb(csvFilePath string, db *sqlx.DB) (err error) {
 		si := ServerInfo{}
 		si.Name = item[0]
 		si.IP = item[1]
-		si.Password = item[2]
-		si.Description = item[3]
+		si.SshIP = item[2]
+		si.Password = item[3]
+		si.Description = item[4]
 
 		//在内存中插入
 		servers[si.Name] = si
 
 		//在数据库中插入
 		//假定table server_info已建立且为空表
-		insertServer := `INSERT INTO server_info (name, ip, password, description) VALUES (:name, :ip, :password, :description)`
+		insertServer := `INSERT INTO server_info (name, ip, ssh_ip, password, description) VALUES (:name, :ip, :ssh_ip, :password, :description)`
 
 		_, err := db.NamedExec(insertServer, si)
 		if err != nil {

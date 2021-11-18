@@ -60,7 +60,7 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	}
 
 	sshServer := toVncServer.DefaultSshServerInfo()
-	sshServer.Host = server.IP
+	sshServer.Host = server.SshIP
 	sshServer.Password = server.Password
 
 	//修改并获取密码

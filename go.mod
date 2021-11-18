@@ -3,6 +3,7 @@ module RAS
 go 1.14
 
 require (
+	github.com/amoghe/go-crypt v0.0.0-20191109212615-b2ff80594b7f
 	github.com/gomodule/redigo v1.8.2
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/julienschmidt/httprouter v1.3.0
