@@ -12,8 +12,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"log"
-	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -61,23 +61,40 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		return
 	}
 
+	// 查询ssh服务器，并解析端口号
 	sshServer := toVncServer.DefaultSshServerInfo()
-	host, port, err := net.SplitHostPort(server.SshIP)
-	if err != nil {
+	hostPort := server.SshIP
+	// Regular expression for IPv4 addresses
+	regex := `^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?(:([0-9]{1,5}))?$`
+
+	match, _ := regexp.MatchString(regex, hostPort)
+
+	if !match {
+		fmt.Println("Invalid IPv4 address or port")
+		log.Printf("Invalid IPv4 address or port: %s", hostPort)
+		loginInfo := LoginInfo{
+			RetCode: -1,
+			Msg:     "服务器SSH地址及端口号格式错误，请联系管理员！",
+		}
 		writeResponse(loginInfo, &w)
 		return
 	}
 
-	if len(port) != 0 {
-		intPort, err := strconv.Atoi(port)
-		if err != nil {
-			intPort = 22
-		}
-		sshServer.Port = intPort
+	re := regexp.MustCompile(`:([0-9]{1,5})$`)
+	matches := re.FindStringSubmatch(hostPort)
+
+	host := hostPort
+	port := "22" // default port
+
+	if len(matches) > 1 {
+		host = hostPort[:len(hostPort)-len(matches[0])]
+		port = matches[1]
 	}
 
 	sshServer.Host = host
+	sshServer.Port, _ = strconv.Atoi(port)
 	sshServer.Password = server.Password
+	log.Printf("sshServer ip = %s, port = %d", sshServer.Host, sshServer.Port)
 
 	//修改并获取密码
 	passwd, err := toVncServer.ModifyVncPassword(person, sshServer)
