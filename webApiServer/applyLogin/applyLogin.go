@@ -12,7 +12,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -60,7 +62,21 @@ func PostApplyLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	}
 
 	sshServer := toVncServer.DefaultSshServerInfo()
-	sshServer.Host = server.SshIP
+	host, port, err := net.SplitHostPort(server.SshIP)
+	if err != nil {
+		writeResponse(loginInfo, &w)
+		return
+	}
+
+	if len(port) != 0 {
+		intPort, err := strconv.Atoi(port)
+		if err != nil {
+			intPort = 22
+		}
+		sshServer.Port = intPort
+	}
+
+	sshServer.Host = host
 	sshServer.Password = server.Password
 
 	//修改并获取密码

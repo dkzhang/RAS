@@ -5,7 +5,7 @@ RUN go env -w GO111MODULE=on && \
 
 WORKDIR /go/src
 
-RUN git clone https://github.com/dkzhang/RAS.git #20200716-2132
+RUN git clone https://github.com/dkzhang/RAS.git #20230731-0846
 
 WORKDIR /go/src/RAS/webApiServer
 
